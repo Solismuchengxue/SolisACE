@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html :lang="currentLanguage">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ValgACE Control Panel</title>
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="stylesheet" href="css/ace-dashboard.css">
-    <script src="js/vue.global.js"></script>
-    <script src="config/ace-dashboard-config.js"></script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="ace-dashboard.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="ace-dashboard-config.js"></script>
 </head>
 <body>
     <div id="app">
@@ -16,11 +16,9 @@
             <header class="header">
                 <h1>{{ t('header.title') }}</h1>
                 <div class="header-actions">
-                    <div class="language-selector">
-                        <button class="btn btn-language" @click="setLanguage('zh')" :class="{ active: currentLanguage === 'zh' }">中文</button>
-                        <button class="btn btn-language" @click="setLanguage('en')" :class="{ active: currentLanguage === 'en' }">EN</button>
-                        <button class="btn btn-language" @click="setLanguage('ru')" :class="{ active: currentLanguage === 'ru' }">RU</button>
-                    </div>
+                    <button class="btn btn-language" @click="toggleLanguage">
+                        {{ currentLanguage === 'ru' ? 'EN' : 'RU' }}
+                    </button>
                     <div class="connection-status" :class="{ connected: wsConnected, disconnected: !wsConnected }">
                         <span class="status-dot"></span>
                         <span>{{ wsConnected ? t('header.connected') : t('header.disconnected') }}</span>
@@ -250,7 +248,7 @@
         </div>
     </div>
 
-    <script src="js/ace-dashboard.js"></script>
+    <script src="ace-dashboard.js"></script>
 </body>
 </html>
 

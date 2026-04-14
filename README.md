@@ -149,13 +149,13 @@ ACE Pro 设备通过MX3.0 6P端子连接到标准 USB：
 完整文档可在 `docs/` 文件夹中获得：
 
 **英文文档：**
-- **[安装](docs/INSTALLATION.md)** - 详细的安装指南
-- **[用户指南](docs/USER_GUIDE.md)** - 如何使用 ValgACE
-- **[命令参考](docs/COMMANDS.md)** - 所有可用的 G-code 命令
-- **[配置](docs/CONFIGURATION.md)** - 参数配置
-- **[故障排除](docs/TROUBLESHOOTING.md)** - 常见问题和解决方案
-- **[协议](docs/PROTOCOL.md)** - 技术协议文档（英文）
-- **[Moonraker API](docs/MOONRAKER_API.md)** - Moonraker API 集成和 REST 端点
+- **[安装](docs/INSTALLATION.md)**            - 详细的安装指南
+- **[用户指南](docs/USER_GUIDE.md)**          - 如何使用 ValgACE
+- **[命令参考](docs/COMMANDS.md)**            - 所有可用的 G-code 命令
+- **[配置](docs/CONFIGURATION.md)**           - 参数配置
+- **[故障排除](docs/TROUBLESHOOTING.md)**     - 常见问题和解决方案
+- **[协议](docs/PROTOCOL.md)**                - 技术协议文档
+- **[Moonraker API](docs/MOONRAKER_API.md)**  - Moonraker API 集成和 REST 端点
 
 
 ## 主要命令

@@ -1,15 +1,27 @@
 #!/bin/sh
 
-# 脚本版本
-VERSION="1.2"
+# =============================================================================
+# ACE 仪表板 - 交互式安装程序
+# =============================================================================
+# 1. 安装 ValgACE 组件到 Klipper
+# 2. 创建 ACE 配置文件
+# 3. 创建 Moonraker 组件
+# 4. 创建 Klipper 配置文件
+# 5. 创建 Moonraker 配置文件
+# 6. 将 ACE 仪表板 Web 文件安装到 Mainsail/Fluidd 中
+# 7. 重启 Klipper 和 Moonraker 服务
+# 并安装 Moonraker 组件以获取 ACE 状态。
+#
+# 使用方法: ./install.sh
+# =============================================================================
 
-# 确定架构
-IS_MIPS=0
-if echo "$(uname -m)" | grep -q "mips"; then
-   IS_MIPS=1
-fi
+# ============================================================================
+# 全局参数
+# ============================================================================
+VERSION="1.2"                                               # 脚本版本
+IS_MIPS=$(uname -m | grep -q "mips" && echo 1 || echo 0)    # 是否MIPS架构
 
-# 默认路径
+# 配置路径
 KLIPPER_HOME="${HOME}/klipper"
 KLIPPER_CONFIG_HOME="${HOME}/printer_data/config"
 MOONRAKER_CONFIG_DIR="${HOME}/printer_data/config"
@@ -17,12 +29,21 @@ MOONRAKER_HOME="${HOME}/moonraker"
 SRCDIR="$PWD"
 KLIPPER_ENV="${HOME}/klippy-env/bin"
 
-# 对于 MIPS 系统
-if [ "$IS_MIPS" -eq 1 ]; then
-    KLIPPER_HOME="/usr/share/klipper"
-    KLIPPER_CONFIG_HOME="/usr/data/printer_data/config"
-    MOONRAKER_CONFIG_DIR="/usr/data/printer_data/config"
-    KLIPPER_ENV="/usr/bin"
+# 输出颜色
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 脚本目录（此脚本所在位置）
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
+
+# 解析安装用户/主目录以设置默认值
+INSTALL_USER="${SUDO_USER:-$(id -un)}"
+INSTALL_HOME="$(getent passwd "$INSTALL_USER" 2>/dev/null | cut -d: -f6 || true)"
+if [ -z "$INSTALL_HOME" ]; then
+    INSTALL_HOME="$HOME"
 fi
 
 # 服务名称
@@ -146,7 +167,7 @@ link_moonraker_component() {
         exit 1
     fi
 
-    # Ensure destination directory exists
+    # 确保目标目录存在
     DEST_DIR="${MOONRAKER_HOME}/moonraker/components"
     mkdir -p "${DEST_DIR}"
 
@@ -158,7 +179,7 @@ link_moonraker_component() {
         exit 1
     fi
 
-    # Ensure config section exists in moonraker.conf
+    # 确保moonraker.conf配置文件中存在相应的配置节
     if ! grep -q "^\[ace_status\]" "${MOONRAKER_CONFIG_DIR}/moonraker.conf"; then
         echo -n "将 [ace_status] 添加到 moonraker.conf... "
         printf "\n[ace_status]\n" >> "${MOONRAKER_CONFIG_DIR}/moonraker.conf" && echo "[确定]" || echo "[失败]"
@@ -306,3 +327,16 @@ start_service "$KLIPPER_SERVICE"
 
 echo "操作成功完成"
 exit 0
+
+# ============================================================================
+# 主安装
+# ============================================================================
+
+
+# ============================================================================
+# 入口点
+# ============================================================================
+
+if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    main "$@"
+fi

@@ -43,32 +43,18 @@ body {
     gap: 12px;
 }
 
-.language-selector {
-    display: flex;
-    gap: 4px;
-    background: #f8fafc;
-    border-radius: 20px;
-    padding: 4px;
-}
-
 .btn-language {
     background: transparent;
-    border: none;
-    color: #64748b;
-    padding: 6px 12px;
-    border-radius: 16px;
+    border: 2px solid #667eea;
+    color: #667eea;
+    padding: 6px 14px;
+    border-radius: 999px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 14px;
 }
 
 .btn-language:hover {
-    background: #e2e8f0;
-    color: #334155;
-}
-
-.btn-language.active {
     background: #667eea;
     color: #ffffff;
 }
