@@ -662,7 +662,9 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #2c323c;  /* 暗色主题统一边框色 */
+    flex-wrap: nowrap;                  /* 强制不换行 */
+    gap: 8px;                           /* 标签与内容间距 */
 }
 
 .info-item:last-child {
@@ -672,16 +674,33 @@ body {
 .info-item .label {
     font-size: 12px;
     color: #cdd3dd;
+    white-space: nowrap;                /* 标签文字不换行 */
+    flex-shrink: 0;                     /* 不允许标签收缩 */
+    min-width: 60px;                    /* 给标签一个最小宽度，保证对齐 */
 }
 
 .info-item .value {
     font-size: 12px;
     font-weight: 600;
     color: #e6e9ed;
+    text-align: right;
+    white-space: nowrap;          /* 强制不换行 */
+    overflow: hidden;             /* 超出隐藏 */
+    text-overflow: ellipsis;      /* 超出显示省略号 */
+    max-width: 180px;             /* 限制最大宽度，可根据需要调整 */
+    flex-shrink: 1;               /* 允许收缩 */
+}
+
+.info-item input,
+.info-item select {
+    flex: 1 1 auto;                     /* 占据剩余空间 */
+    min-width: 0;                       /* 允许内容收缩，防止溢出父容器 */
+    text-align: left;                  /* 内容左对齐，与标签形成左右布局 */
 }
 
 .material-select {
     width: 100%;
+    max-width: 180px;                   /* 限制最大宽度，避免过宽 */
     padding: 6px 8px;
     border-radius: 6px;
     border: 1px solid #2c323c;
@@ -691,10 +710,13 @@ body {
     display: flex;
     align-items: center;
     font-size: 14px;
+    text-align: left;                   /* 下拉框文字左对齐更符合阅读习惯 */
+    text-align-last: left;              /* 针对部分浏览器 */
 }
 
 .temp-input {
-    width: 80px;
+    width: 100%;
+    max-width: 180px;                   /* 限制最大宽度，避免过宽 */
     padding: 6px 8px;
     border-radius: 6px;
     border: 1px solid #2c323c;

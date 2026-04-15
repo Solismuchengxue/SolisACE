@@ -69,20 +69,40 @@ createApp({
                         status: 'Status',
                         type: 'Material',
                         preset: 'Preset Name',
+                        presetLabel: 'Preset',
+                        selectMaterial: '-- Select Material --',
+                        builtinMaterials: 'Built‑in Materials',
                         temp: 'Temp',
                         sku: 'SKU',
-                        rfid: 'RFID'
+                        rfid: 'RFID',
+                        currentLoaded: 'Current Loaded',
+                        none: 'None'
+                    },
+                    presetLibrary: {
+                        title: 'Preset Library',
+                        filamentName: 'Filament Name',
+                        material: 'Material',
+                        temperature: 'Temperature (°C)',
+                        action: 'Action',
+                        noPresets: 'No presets imported yet. Use "Import Orca Presets" to add filament profiles.',
+                        delete: 'Delete',
+                        clearAll: 'Clear All Presets'
                     },
                     quickActions: {
                         unload: 'Save Inventory',
                         stopAssist: 'Stop All Assist',
-                        refresh: 'Refresh Status'
+                        refresh: 'Refresh Status',
+                        importOrcaPresets: 'Import Orca Presets',
+                        saveToPrinter: 'Save to Printer',
+                        loadFromPrinter: 'Load from Printer'
                     },
                     buttons: {
                         load: 'Load',
                         unload: 'Unload',
                         assistOn: 'Assist ON',
-                        assistOff: 'Assist OFF'
+                        assistOff: 'Assist OFF',
+                        retract: 'Retract',
+                        feed: 'Feed'
                     },
                     dialogs: {
                         feedTitle: 'Feed Filament - Slot {slot}',
@@ -138,6 +158,9 @@ createApp({
                         ready: 'Ready',
                         empty: 'Empty',
                         busy: 'Busy',
+                        loaded: 'Loaded',        // 新增
+                        unwinding: 'Unwinding',  // 新增
+                        shifting: 'Shifting',     // 新增
                         unknown: 'Unknown'
                     },
                     rfidStatusMap: {
@@ -147,7 +170,8 @@ createApp({
                         3: 'Identifying...'
                     },
                     common: {
-                        unknown: 'Unknown'
+                        unknown: 'Unknown',
+                        current: 'Current'
                     },
                     time: {
                         hours: 'h',
@@ -204,20 +228,40 @@ createApp({
                         status: '状态',
                         type: '材料',
                         preset: '预设名称',
+                        presetLabel: '预设',
+                        selectMaterial: '-- 选择材料 --',
+                        builtinMaterials: '内置材料',
                         temp: '温度',
                         sku: 'SKU',
-                        rfid: 'RFID'
+                        rfid: 'RFID',
+                        currentLoaded: '当前装载',
+                        none: '无'
+                    },
+                    presetLibrary: {
+                        title: '预设库',
+                        filamentName: '耗材名称',
+                        material: '材料',
+                        temperature: '温度 (°C)',
+                        action: '操作',
+                        noPresets: '尚未导入预设。请使用“导入 Orca 预设”添加耗材配置文件。',
+                        delete: '删除',
+                        clearAll: '清空所有预设'
                     },
                     quickActions: {
-                        unload: '保存库存',
+                        unload: '写入设备配置',
                         stopAssist: '停止所有辅助',
-                        refresh: '刷新状态'
+                        refresh: '刷新状态',
+                        importOrcaPresets: '导入 Orca 预设',
+                        saveToPrinter: '保存到打印机',
+                        loadFromPrinter: '从打印机加载' 
                     },
                     buttons: {
                         load: '加载',
                         unload: '卸载',
                         assistOn: '辅助开',
-                        assistOff: '辅助关'
+                        assistOff: '辅助关',
+                        retract: '回抽',
+                        feed: '送料'
                     },
                     dialogs: {
                         feedTitle: '送料 - 槽位 {slot}',
@@ -273,6 +317,9 @@ createApp({
                         ready: '就绪',
                         empty: '空',
                         busy: '忙碌',
+                        loaded: '已装载',        // 新增
+                        unwinding: '回抽中',  // 新增
+                        shifting: '切换中',     // 新增
                         unknown: '未知'
                     },
                     rfidStatusMap: {
@@ -282,7 +329,8 @@ createApp({
                         3: '识别中...'
                     },
                     common: {
-                        unknown: '未知'
+                        unknown: '未知',
+                        current: '当前' 
                     },
                     time: {
                         hours: '小时',
@@ -664,6 +712,7 @@ createApp({
                 return;
             }
 
+            // 获取当前工具索引
             let incomingCurrentTool = null;
             const topLevelCurrent = Number(data.current_index);
             const managerCurrent = Number(data?.ace_manager?.current_index);
@@ -684,17 +733,43 @@ createApp({
                 console.log('Updating main status with data:', data);
             }
 
-            const instances = Array.isArray(data.instances) ? data.instances : [];
-            this.instanceOptions = instances
+            // 处理实例列表：如果 instances 为空但有顶层 slots，则构造一个默认实例
+            let instancesRaw = Array.isArray(data.instances) ? data.instances : [];
+            if (instancesRaw.length === 0 && (data.slots || data.feed_assist_slot !== undefined || data.current_index !== undefined)) {
+                const defaultIndex = typeof data.instance_index === 'number' ? data.instance_index : 0;
+                instancesRaw = [{
+                    index: defaultIndex,
+                    slots: data.slots || [],
+                    feed_assist_slot: typeof data.feed_assist_slot === 'number' ? data.feed_assist_slot : -1,
+                    rfid_sync_enabled: data.rfid_sync_enabled || false
+                }];
+            }
+
+            // 更新 instanceOptions 和选中实例
+            this.instanceOptions = instancesRaw
                 .map(item => ({ index: typeof item?.index === 'number' ? item.index : 0 }))
                 .sort((a, b) => a.index - b.index);
+            if (this.instanceOptions.length === 0) {
+                // 完全没有实例数据时，添加一个占位
+                this.instanceOptions = [{ index: 0 }];
+                this.selectedInstance = 0;
+                this.selectedDryerInstance = 0;
+            } else {
+                // 如果当前选中的实例不在选项中，重置为第一个
+                if (!this.instanceOptions.find(opt => opt.index === this.selectedInstance)) {
+                    this.selectedInstance = this.instanceOptions[0].index;
+                    this.selectedDryerInstance = this.selectedInstance;
+                }
+            }
+            // 如果后端返回了 instance_index 且有效，优先使用
             if (typeof data.instance_index === 'number') {
-                if (!Number.isInteger(this.selectedInstance) ||
-                    !this.instanceOptions.find(opt => opt.index === this.selectedInstance)) {
+                if (this.instanceOptions.find(opt => opt.index === data.instance_index)) {
                     this.selectedInstance = data.instance_index;
+                    this.selectedDryerInstance = data.instance_index;
                 }
             }
 
+            // 更新设备状态基础字段
             if (data.status !== undefined) this.deviceStatus.status = data.status;
             if (data.connection_state !== undefined) this.deviceStatus.connection_state = data.connection_state || 'unknown';
             if (data.model !== undefined) this.deviceStatus.model = data.model;
@@ -706,9 +781,9 @@ createApp({
             if (data.usb_path !== undefined) this.deviceStatus.usb_path = data.usb_path;
             if (data.enable_rfid !== undefined) this.deviceStatus.enable_rfid = data.enable_rfid;
 
-            const instancesRaw = Array.isArray(data.instances) ? data.instances : [];
             const prevPanels = this.instancesPanels || [];
             if (instancesRaw.length > 0) {
+                // 多实例或构造的实例列表
                 this.instancesPanels = instancesRaw.map(item => {
                     const slotsArr = Array.isArray(item.slots) ? item.slots : [];
                     const prevPanel = prevPanels.find(p => p.index === item.index);
@@ -717,7 +792,6 @@ createApp({
                         slots: slotsArr.map((slot, idx) => {
                             const existingSlot = prevPanel?.slots?.find(s => s.index === slot.index);
                             let customName = (slot.custom_name && slot.custom_name.trim()) ? slot.custom_name : (existingSlot?.custom_name || '');
-                            // If still empty, try localStorage
                             if (!customName) {
                                 customName = this._loadPresetFromLocalStorage(item.index, slot.index);
                             }
@@ -751,6 +825,7 @@ createApp({
                     this.feedAssistSlot = selectedPanel.feedAssistSlot ?? -1;
                 }
             } else if (data.slots !== undefined) {
+                // 降级：只处理顶层 slots（兼容老版本，但一般不会走到这里）
                 if (Array.isArray(data.slots)) {
                     this.slots = data.slots.map(slot => {
                         const existingSlot = this.slots.find(s => s.index === slot.index);
@@ -1539,6 +1614,34 @@ createApp({
 
         _loadPresetFromLocalStorage(instanceIndex, slotIndex) {
             return localStorage.getItem(this._getStorageKey(instanceIndex, slotIndex)) || '';
+        },
+        onMaterialChange(slot, instanceIndex) {
+            // 防御：如果材料为空，不处理
+            if (!slot.material) return;
+            
+            // 1. 根据内置材料表获取默认温度
+            const builtInTemp = this.materialOptions[slot.material];
+            if (builtInTemp !== undefined) {
+                slot.temp = builtInTemp;
+            }
+            
+            // 2. 清除预设名称（因为手动改材料后不再匹配任何预设）
+            slot.custom_name = '';
+            this._savePresetToLocalStorage(instanceIndex, slot.index, '');
+            
+            // 3. 立即发送命令到打印机
+            this.setSlotMaterial(
+                slot.index,
+                instanceIndex,
+                slot.tool,
+                slot.material,
+                slot.color,
+                slot.temp,
+                ''  // 清空预设名
+            );
+            
+            // 4. 可选：显示短暂提示
+            this.showNotification(`材料已设为 ${slot.material}`, 'info');
         },
 
         // New method: apply preset to slot

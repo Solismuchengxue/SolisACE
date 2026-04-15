@@ -582,6 +582,7 @@ class ValgAce:
         return {
             'status': self._info.get('status', 'unknown'),
             'connection_state': 'connected' if self._connected else 'disconnected',
+            'current_index': self.variables.get('ace_current_index', -1),  # 添加这行
             'model': self._info.get('model', ''),
             'firmware': self._info.get('firmware', ''),
             'boot_firmware': self._info.get('boot_firmware', ''),

@@ -5,9 +5,9 @@ const ACE_DASHBOARD_CONFIG = {
     // Moonraker API base URL
     // Defaults to current host. Override if needed, e.g.:
     // apiBase: 'http://localhost:7125',
-    // apiBase: 'http://192.168.1.100:7125',
+    apiBase: 'http://192.168.0.15:7125',
     // apiBase: 'https://moonraker.example.com',
-    apiBase: window.location.origin,
+    // apiBase: window.location.origin,
     
     // WebSocket base URL
     // Automatically derived from apiBase if null.

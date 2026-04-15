@@ -97,11 +97,11 @@
                             </div>
                             <div class="duration-group">
                                 <div class="control-group">
-                                    <label>Hours</label>
+                                    <label>{{ t('time.hours') }}</label>
                                     <input type="number" v-model.number="dryingHours" min="0" max="24" :disabled="dryerStatus.status === 'drying'">
                                 </div>
                                 <div class="control-group">
-                                    <label>Minutes</label>
+                                    <label>{{ t('time.minutes') }}</label>
                                     <input type="number" v-model.number="dryingMinutes" min="0" max="59" :disabled="dryerStatus.status === 'drying'">
                                 </div>
                             </div>
@@ -139,7 +139,7 @@
             <div class="card slots-card">
                 <h2>{{ t('cards.slots') }}</h2>
                 <div class="current-tool-indicator" :class="{ none: currentTool < 0 }">
-                    Current Loaded: {{ currentTool >= 0 ? `T${currentTool}` : 'None' }}
+                    {{ t('slots.currentLoaded') }}: {{ currentTool >= 0 ? `T${currentTool}` : t('slots.none') }}
                 </div>
                 <div class="instances-wrapper">
                     <div 
@@ -150,7 +150,7 @@
                     >
                         <div class="instance-header">
                             <span>{{ t('header.instanceLabel', { index: inst.index }) }}</span>
-                            <span v-if="inst.index === selectedInstance" class="current-badge">Current</span>
+                            <span v-if="inst.index === selectedInstance" class="current-badge">{{ t('common.current') }}</span>
                         </div>
                         <div class="slots-grid">
                             <div 
@@ -194,8 +194,9 @@
                                     <!-- Material dropdown (renamed) -->
                                     <div class="info-item">
                                         <span class="label">{{ t('slots.type') }}:</span>
-                                        <select class="material-select" :value="slot.material || slot.type || ''" @change="setSlotMaterial(slot.index, inst.index, slot.tool, $event.target.value, slot.color, slot.temp, slot.custom_name)" :disabled="isSlotLocked(inst, slot)">
-                                            <optgroup label="Built‑in Materials">
+                                        <select class="material-select" v-model="slot.material" @change="onMaterialChange(slot, inst.index)" :disabled="isSlotLocked(inst, slot)">
+                                            <option value="">{{ t('slots.selectMaterial') }}</option>
+                                            <optgroup :label="t('slots.builtinMaterials')">
                                                 <option v-for="(temp, mat) in materialOptions" :key="mat" :value="mat">{{ mat }}</option>
                                             </optgroup>
                                         </select>
@@ -214,7 +215,7 @@
                                         >
                                     </div>
                                     <div class="info-item" v-if="slot.custom_name && slot.custom_name !== slot.material && slot.custom_name !== slot.type">
-                                        <span class="label">Preset:</span>
+                                        <span class="label">{{ t('slots.presetLabel') }}:</span>
                                         <span class="value">{{ slot.custom_name }}</span>
                                     </div>
                                     <div class="info-item">
@@ -230,27 +231,27 @@
                                 <!-- Feed/Retract Controls -->
                                 <div class="feed-retract-controls">
                                     <div class="feed-section">
-                                        <button @click="executeCustomFeed(slot, inst.index)" :disabled="slot.status !== 'ready'" class="btn btn-sm btn-primary">Feed</button>
+                                        <button @click="executeCustomFeed(slot, inst.index)" :disabled="slot.status !== 'ready'" class="btn btn-sm btn-primary">{{ t('buttons.feed') }}</button>
                                         <div class="input-row">
                                             <div class="input-field">
-                                                <label>Length (mm)</label>
+                                                <label>{{ t('dialogs.length') }}</label>
                                                 <input type="number" v-model.number="slot.customFeedLength" min="1" max="2000" :disabled="slot.status !== 'ready'">
                                             </div>
                                             <div class="input-field">
-                                                <label>Speed (mm/s)</label>
+                                                <label>{{ t('dialogs.speed') }}</label>
                                                 <input type="number" v-model.number="slot.customFeedSpeed" min="1" max="100" :disabled="slot.status !== 'ready'">
                                             </div>
                                         </div>
                                     </div>
                                     <div class="retract-section">
-                                        <button @click="executeCustomRetract(slot, inst.index)" :disabled="slot.status !== 'ready'" class="btn btn-sm btn-secondary">Retract</button>
+                                        <button @click="executeCustomRetract(slot, inst.index)" :disabled="slot.status !== 'ready'" class="btn btn-sm btn-secondary">{{ t('buttons.retract') }}</button>
                                         <div class="input-row">
                                             <div class="input-field">
-                                                <label>Length (mm)</label>
+                                                <label>{{ t('dialogs.length') }}</label>
                                                 <input type="number" v-model.number="slot.customRetractLength" min="1" max="2000" :disabled="slot.status !== 'ready'">
                                             </div>
                                             <div class="input-field">
-                                                <label>Speed (mm/s)</label>
+                                                <label>{{ t('dialogs.speed') }}</label>
                                                 <input type="number" v-model.number="slot.customRetractSpeed" min="1" max="100" :disabled="slot.status !== 'ready'">
                                             </div>
                                         </div>
@@ -295,32 +296,32 @@
             <!-- Preset Library Card -->
             <div class="card preset-library-card">
                 <h2 style="cursor: pointer;" @click="showPresetLibrary = !showPresetLibrary">
-                    Preset Library
+                    {{ t('presetLibrary.title') }}
                     <span style="float: right;">{{ showPresetLibrary ? '▼' : '▶' }}</span>
                 </h2>
                 <div v-if="showPresetLibrary">
                     <div v-if="presets.length === 0" class="info-row">
-                        No presets imported yet. Use "Import Orca Presets" to add filament profiles.
+                        {{ t('presetLibrary.noPresets') }}
                     </div>
                     <div v-else>
                         <div class="preset-table">
                             <div class="preset-header">
-                                <div class="preset-col-name">Filament Name</div>
-                                <div class="preset-col-material">Material</div>
-                                <div class="preset-col-temp">Temperature (°C)</div>
-                                <div class="preset-col-action">Action</div>
+                                <div class="preset-col-name">{{ t('presetLibrary.filamentName') }}</div>
+                                <div class="preset-col-material">{{ t('presetLibrary.material') }}</div>
+                                <div class="preset-col-temp">{{ t('presetLibrary.temperature') }}</div>
+                                <div class="preset-col-action">{{ t('presetLibrary.action') }}</div>
                             </div>
                             <div v-for="(preset, idx) in presets" :key="idx" class="preset-row">
                                 <div class="preset-col-name">{{ preset.name }}</div>
                                 <div class="preset-col-material">{{ preset.material }}</div>
                                 <div class="preset-col-temp">{{ preset.temp }}°C</div>
                                 <div class="preset-col-action">
-                                    <button class="btn btn-sm btn-outline-danger" @click="deletePreset(idx)">Delete</button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deletePreset(idx)">{{ t('presetLibrary.delete') }}</button>
                                 </div>
                             </div>
                         </div>
                         <div class="button-group" style="margin-top: 12px;">
-                            <button class="btn btn-sm btn-danger" @click="clearAllPresets">Clear All Presets</button>
+                            <button class="btn btn-sm btn-danger" @click="clearAllPresets">{{ t('presetLibrary.clearAll') }}</button>
                         </div>
                     </div>
                 </div>
@@ -340,13 +341,13 @@
                         {{ t('quickActions.refresh') }}
                     </button>
                     <button @click="importOrcaPresets" class="btn btn-info">
-                        Import Orca Presets
+                        {{ t('quickActions.importOrcaPresets') }}
                     </button>
                     <button @click="saveToPrinter" class="btn btn-info">
-                        💾 Save to Printer
+                        💾 {{ t('quickActions.saveToPrinter') }}
                     </button>
                     <button @click="loadFromPrinter" class="btn btn-info">
-                        📂 Load from Printer
+                        📂 {{ t('quickActions.loadFromPrinter') }}
                     </button>
                 </div>
             </div>
