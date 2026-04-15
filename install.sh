@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# ValgACE 交互式安装脚本
+# SolisACE 交互式安装脚本
 # 功能：
 #   1. 安装 Klipper extras (ace.py, temperature_ace.py)
 #   2. 安装配置文件 (ace.cfg) 并引用至 printer.cfg
@@ -41,6 +41,7 @@ SRC_EXTRAS="${SCRIPT_DIR}/extras"
 SRC_MOONRAKER="${SCRIPT_DIR}/moonraker"
 SRC_WEB="${SCRIPT_DIR}/web-interface"
 SRC_ACE_CFG="${SCRIPT_DIR}/ace.cfg"
+SRC_REQUIREMENTS="${SCRIPT_DIR}/requirements.txt"
 
 # 服务名称
 KLIPPER_SERVICE="klipper"
@@ -147,6 +148,27 @@ ensure_printer_cfg_include() {
 }
 
 # ----------------------------- 安装步骤 ----------------------------------
+install_requirements() {
+    print_header "0. 安装 Python 依赖"
+    if [ ! -f "$SRC_REQUIREMENTS" ]; then
+        print_warning "未找到 requirements.txt，跳过依赖安装"
+        return
+    fi
+
+    local pip_cmd="pip3"
+    if [ -d "${INSTALL_HOME}/klippy-env" ]; then
+        pip_cmd="${INSTALL_HOME}/klippy-env/bin/pip3"
+    fi
+
+    print_info "使用 $pip_cmd 安装依赖..."
+    if $pip_cmd install -r "$SRC_REQUIREMENTS" --quiet; then
+        print_success "依赖安装完成"
+    else
+        print_error "依赖安装失败，请检查网络或手动安装 pyserial"
+        exit 1
+    fi
+}
+
 install_klipper_extras() {
     print_header "1. 安装 Klipper 扩展"
     create_symlink "$SRC_EXTRAS/ace.py" "$KLIPPER_HOME/klippy/extras/ace.py" "ace.py"
@@ -184,14 +206,14 @@ install_moonraker_component() {
 
 add_update_manager() {
     print_header "4. 添加更新管理器"
-    local updater_section="[update_manager ValgACE]
+    local updater_section="[update_manager SolisACE]
 type: git_repo
 path: ${SCRIPT_DIR}
 primary_branch: main
-origin: https://github.com/agrloki/ValgACE.git
+origin: https://github.com/Solismuchengxue/SolisACE.git
 managed_services: klipper"
     
-    if grep -qF "[update_manager ValgACE]" "$MOONRAKER_CONFIG" 2>/dev/null; then
+    if grep -qF "[update_manager SolisACE]" "$MOONRAKER_CONFIG" 2>/dev/null; then
         print_success "更新管理器已存在"
     else
         backup_file "$MOONRAKER_CONFIG"
@@ -288,7 +310,7 @@ restart_services() {
 
 # ----------------------------- 卸载流程 ----------------------------------
 uninstall_all() {
-    print_header "卸载 ValgACE"
+    print_header "卸载 SolisACE"
     
     print_info "正在移除 Klipper 扩展符号链接..."
     rm -f "$KLIPPER_HOME/klippy/extras/ace.py" 2>/dev/null && print_success "已移除 ace.py"
@@ -311,7 +333,7 @@ uninstall_all() {
     print_info "注意：配置文件及 printer.cfg/moonraker.conf 中的引用需要手动移除："
     echo "  - $KLIPPER_CONFIG_HOME/ace.cfg"
     echo "  - printer.cfg 中的 '[include ace.cfg]'"
-    echo "  - moonraker.conf 中的 '[ace_status]' 及 '[update_manager ValgACE]' 段落"
+    echo "  - moonraker.conf 中的 '[ace_status]' 及 '[update_manager SolisACE]' 段落"
     
     if prompt_yes_no "是否立即重启服务？"; then
         sudo systemctl restart $KLIPPER_SERVICE $MOONRAKER_SERVICE
@@ -325,7 +347,7 @@ show_help() {
 用法: $0 [选项]
 
 选项:
-  -u          卸载 ValgACE
+  -u          卸载 SolisACE
   -h          显示此帮助信息
   -v          显示版本信息
 
@@ -334,7 +356,7 @@ EOF
 }
 
 show_version() {
-    echo "ValgACE 安装脚本 v${SCRIPT_VERSION}"
+    echo "SolisACE 安装脚本 v${SCRIPT_VERSION}"
 }
 
 # 解析命令行参数
@@ -361,7 +383,7 @@ if [ "$UNINSTALL" -eq 1 ]; then
 fi
 
 # 交互式安装
-print_header "ValgACE 交互式安装向导 v${SCRIPT_VERSION}"
+print_header "SolisACE 交互式安装向导 v${SCRIPT_VERSION}"
 
 # 确认或修改默认路径
 print_info "检测到以下默认路径，如有不符请修改："
@@ -382,6 +404,7 @@ if [ ! -d "$MOONRAKER_HOME/moonraker/components" ]; then
 fi
 
 # 执行安装步骤
+install_requirements
 install_klipper_extras
 install_config
 install_moonraker_component
@@ -400,18 +423,16 @@ restart_services
 print_header "安装成功完成！"
 cat << EOF
 
-ValgACE 已成功安装。
+SolisACE 已成功安装。
 
 - Klipper 扩展:     $KLIPPER_HOME/klippy/extras/ace.py
                     $KLIPPER_HOME/klippy/extras/temperature_ace.py
 - Moonraker 扩展:   $MOONRAKER_HOME/moonraker/components/ace_status.py
 - Web 仪表板:       $([ $INSTALL_WEB -eq 1 ] && echo "已安装" || echo "未安装")
-                    if 已安装，请检查以下路径：
-                    ${INSTALL_HOME}/mainsail 或 ${INSTALL_HOME}/fluidd (取决于选择)
-                    ace.html ace-dashboard.js ace-dashboard.css ace-dashboard-config.js favicon.svg
+                    $([ $INSTALL_WEB -eq 1 ] && echo "文件位于: ${INSTALL_HOME}/mainsail 或 ${INSTALL_HOME}/fluidd (根据选择)")
 - 配置文件:         $KLIPPER_CONFIG_HOME/ace.cfg
-                    $KLIPPER_CONFIG_HOME/printer.cfg (包含[include ace.cfg])
-                    $KLIPPER_CONFIG_HOME/moonraker.conf (包含[ace_status]和[update_manager ValgACE])
+                    $KLIPPER_CONFIG_HOME/printer.cfg (包含 [include ace.cfg])
+                    $KLIPPER_CONFIG_HOME/moonraker.conf (包含 [ace_status] 及 [update_manager SolisACE])
 
 如需卸载，请运行: $0 -u
 
